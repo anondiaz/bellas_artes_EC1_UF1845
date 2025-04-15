@@ -1,3 +1,4 @@
+-- ----- Parte 1 -----
 -- Creamos la Base de Datos 
 CREATE DATABASE IF NOT EXISTS tienda_bellas_artes;
 
@@ -72,3 +73,93 @@ DELETE FROM tienda_bellas_artes.productos WHERE name_product = 'lienzo_cotton_50
 
 -- Comprobamos el resultado
 SELECT * FROM tienda_bellas_artes.productos;
+
+-- ----- Parte 2 -----
+-- Ahora que tenemos ya creada y modificada la BD de nuestro cliente, la tienda
+-- necesitará almacenar y sacar más datos útiles para su negocio.
+-- Tarea
+-- Crear tres tablas más, una que se llame proveedores, otra que se llame clientes
+-- y una última que se llame facturas.
+-- 1. En la tabla proveedores tendrán que aparecer los siguientes campos:
+-- a. Id del proveedor
+-- b. Nombre del proveedor
+-- Además de crear la tabla proveedores habrá que modificar la tabla productos de
+-- forma que aparezca el id del proveedor
+-- 2. En la tabla clientes tendrán que aparecer los siguientes campos:
+-- a. Id del cliente
+-- b. Nombre del cliente
+-- c. Fecha de alta del cliente
+
+CREATE TABLE IF NOT EXISTS proveedores(
+`id_provedor` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`nombre_proveedor` VARCHAR(50) NOT NULL
+)
+;
+
+-- Si fuera necesario borrar la tabla
+-- DROP TABLE proveedores;
+-- Vemos que se han aplicado correctamente los parametros
+DESCRIBE tienda_bellas_artes.proveedores;
+
+ALTER TABLE productos ADD COLUMN id_proveedor INT NOT NULL;
+
+CREATE TABLE IF NOT EXISTS clientes(
+`id_cliente` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`nombre_cliente` VARCHAR(50) NOT NULL,
+`fecha_alta` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+;
+
+-- Si fuera necesario borrar la tabla
+-- DROP TABLE clientes;
+-- Vemos que se han aplicado correctamente los parametros
+DESCRIBE tienda_bellas_artes.clientes;
+
+CREATE TABLE IF NOT EXISTS facturas(
+`id_factura` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`code` VARCHAR(10) UNIQUE AUTO_INCREMENT NOT NULL,
+`id_cliente` VARCHAR(50) NOT NULL
+)
+;
+
+-- Si fuera necesario borrar la tabla
+-- DROP TABLE facturas;
+-- Vemos que se han aplicado correctamente los parametros
+DESCRIBE tienda_bellas_artes.facturas;
+
+CREATE TABLE IF NOT EXISTS articulos_facturas(
+`id_art_factura` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`id_producto` INT NOT NULL,
+`id_factura` INT NOT NULL
+)
+;
+
+-- Si fuera necesario borrar la tabla
+-- DROP TABLE articulos_facturas;
+-- Vemos que se han aplicado correctamente los parametros
+DESCRIBE tienda_bellas_artes.articulos_facturas;
+
+INSERT INTO tienda_bellas_artes.proveedores ( nombre_proveedor )
+VALUES ('Distribuciones DaVinci'),
+('Lienzos Goya'),
+('Articulos ARTE'),
+('Productos para el arte creativo'),
+('Acuarelas Marquez')
+;
+
+SELECT * FROM tienda_bellas_artes.proveedores;
+
+INSERT INTO tienda_bellas_artes.clientes ( nombre_cliente)
+VALUES ("Marta Azuara"),
+("Elena Garcia Garcia"),
+("Adria Diaz Martinez"),
+("Andres Vazquez Martinez"),
+("Jordi Lopez Nicolau"),
+("Manuela Cuchillo Martinez"),
+("Juan Martinez Gomez"),
+("Eduardo Cunchillo Vivar"),
+("Manuela Cuchillo Birba"),
+("Pedro Rodriguez Cebolla")
+;
+
+SELECT * FROM tienda_bellas_artes.clientes;
