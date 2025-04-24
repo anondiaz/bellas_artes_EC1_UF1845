@@ -284,156 +284,156 @@ DROP TABLE articulos_facturas;
 -- -------------------------------------------------------------------
 
 -- Añadimos las constraints que relacionaran los campos
-ALTER TABLE articulos_facturas
-ADD CONSTRAINT fk_facturas_art_fra
-FOREIGN KEY (id_factura)
-REFERENCES facturas(id_factura)
-ON DELETE RESTRICT
-ON UPDATE RESTRICT
-;
-ALTER TABLE articulos_facturas
-ADD CONSTRAINT fk_art_fra_productos
-FOREIGN KEY (id_producto)
-REFERENCES productos(id_producto)
-ON DELETE RESTRICT
-ON UPDATE RESTRICT
-;
+-- ALTER TABLE articulos_facturas
+-- ADD CONSTRAINT fk_facturas_art_fra
+-- FOREIGN KEY (id_factura)
+-- REFERENCES facturas(id_factura)
+-- ON DELETE RESTRICT
+-- ON UPDATE RESTRICT
+-- ;
+-- ALTER TABLE articulos_facturas
+-- ADD CONSTRAINT fk_art_fra_productos
+-- FOREIGN KEY (id_producto)
+-- REFERENCES productos(id_producto)
+-- ON DELETE RESTRICT
+-- ON UPDATE RESTRICT
+-- ;
 
 -- -------------------------------------------------------------------
-DELIMITER //
-CREATE PROCEDURE sp_facturar_por_nombre(
-sp_nombre_cliente VARCHAR(50),
-sp_nombre_producto VARCHAR(50),
-sp_cantidad INT
-)
-BEGIN
-    DECLARE idCliente INT; -- v_cliente_id
-    DECLARE idProducto INT;
-    DECLARE stockDispo INT;
-    DECLARE precioProd DECIMAL(8,2);
-    DECLARE idFactura INT;
-    -- Obtenemos el id del cliente
-    SELECT id_cliente
-      INTO idCliente
-      FROM clientes
-     WHERE nombre_cliente = sp_nombre_cliente;
-    IF idCliente IS NULL THEN
-      SIGNAL SQLSTATE '45000'
-      SET MESSAGE_TEXT = 'Cliente no encontrado';
-    END IF;
+-- DELIMITER //
+-- CREATE PROCEDURE sp_facturar_por_nombre(
+-- sp_nombre_cliente VARCHAR(50),
+-- sp_nombre_producto VARCHAR(50),
+-- sp_cantidad INT
+-- )
+-- BEGIN
+--     DECLARE idCliente INT; -- v_cliente_id
+--     DECLARE idProducto INT;
+--     DECLARE stockDispo INT;
+--     DECLARE precioProd DECIMAL(8,2);
+--     DECLARE idFactura INT;
+--     -- Obtenemos el id del cliente
+--     SELECT id_cliente
+--       INTO idCliente
+--       FROM clientes
+--      WHERE nombre_cliente = sp_nombre_cliente;
+--     IF idCliente IS NULL THEN
+--       SIGNAL SQLSTATE '45000'
+--       SET MESSAGE_TEXT = 'Cliente no encontrado';
+--     END IF;
 
-    -- 2) Obtener ID, stock y precio del producto, bloqueando la fila
-    SELECT id_producto, unidades_disponibles, precio_producto
-      INTO v_producto_id, v_stock, v_precio
-      FROM productos
-     WHERE nombre_producto = p_nombre_producto
-     FOR UPDATE;
-    IF v_producto_id IS NULL THEN
-      SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Producto no encontrado';
-    ELSEIF v_stock = 0 THEN
-      SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Producto fuera de stock';
-    ELSEIF v_stock < p_cantidad THEN
-      SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'No hay suficientes unidades en stock';
-    END IF;
+--     -- 2) Obtener ID, stock y precio del producto, bloqueando la fila
+--     SELECT id_producto, unidades_disponibles, precio_producto
+--       INTO v_producto_id, v_stock, v_precio
+--       FROM productos
+--      WHERE nombre_producto = p_nombre_producto
+--      FOR UPDATE;
+--     IF v_producto_id IS NULL THEN
+--       SIGNAL SQLSTATE '45000'
+--         SET MESSAGE_TEXT = 'Producto no encontrado';
+--     ELSEIF v_stock = 0 THEN
+--       SIGNAL SQLSTATE '45000'
+--         SET MESSAGE_TEXT = 'Producto fuera de stock';
+--     ELSEIF v_stock < p_cantidad THEN
+--       SIGNAL SQLSTATE '45000'
+--         SET MESSAGE_TEXT = 'No hay suficientes unidades en stock';
+--     END IF;
 
-    -- 3) Insertar cabecera de factura
-    INSERT INTO facturas (
-      codigo_factura,
-      id_cliente,
-      fecha_factura
-    )
-    VALUES (
-      CONCAT('F', DATE_FORMAT(NOW(), '%Y%m%d'), LPAD(FLOOR(RAND()*9999),4,'0')),
-      v_cliente_id,
-      NOW()
-    );
-    SET v_id_factura = LAST_INSERT_ID();
+--     -- 3) Insertar cabecera de factura
+--     INSERT INTO facturas (
+--       codigo_factura,
+--       id_cliente,
+--       fecha_factura
+--     )
+--     VALUES (
+--       CONCAT('F', DATE_FORMAT(NOW(), '%Y%m%d'), LPAD(FLOOR(RAND()*9999),4,'0')),
+--       v_cliente_id,
+--       NOW()
+--     );
+--     SET v_id_factura = LAST_INSERT_ID();
 
-    -- 4) Insertar detalle en articulos_facturas
-    INSERT INTO articulos_facturas (
-      id_factura,
-      id_producto,
-      unidades_producto,
-      total_factura
-    )
-    VALUES (
-      v_id_factura,
-      v_producto_id,
-      p_cantidad,
-      p_cantidad * v_precio
-    );
+--     -- 4) Insertar detalle en articulos_facturas
+--     INSERT INTO articulos_facturas (
+--       id_factura,
+--       id_producto,
+--       unidades_producto,
+--       total_factura
+--     )
+--     VALUES (
+--       v_id_factura,
+--       v_producto_id,
+--       p_cantidad,
+--       p_cantidad * v_precio
+--     );
 
-    -- 5) Actualizar el stock
-    UPDATE productos
-       SET unidades_disponibles = unidades_disponibles - p_cantidad
-     WHERE id_producto = v_producto_id;
+--     -- 5) Actualizar el stock
+--     UPDATE productos
+--        SET unidades_disponibles = unidades_disponibles - p_cantidad
+--      WHERE id_producto = v_producto_id;
 
-    -- COMMIT;
-END //
-DELIMITER ;
+--     -- COMMIT;
+-- END //
+-- DELIMITER ;
 
 -- CALL sp_facturar_por_nombre( 'Elena Garcia Garcia', 'caja_de_rotuladores_Copic_Ciao_36_A', 5);
 
 -- -------------------------------------------------------------------
 
-DELIMITER //
+-- DELIMITER //
 
-CREATE PROCEDURE sp_insertar_producto(
-    IN p_codigo_producto    VARCHAR(9),
-    IN p_nombre_producto    VARCHAR(50),
-    IN p_precio_producto    DECIMAL(6,2),
-    IN p_unidades           INT,
-    IN p_id_proveedor       INT
-)
-BEGIN
-    DECLARE v_count INT;
+-- CREATE PROCEDURE sp_insertar_producto(
+--     IN p_codigo_producto    VARCHAR(9),
+--     IN p_nombre_producto    VARCHAR(50),
+--     IN p_precio_producto    DECIMAL(6,2),
+--     IN p_unidades           INT,
+--     IN p_id_proveedor       INT
+-- )
+-- BEGIN
+--     DECLARE v_count INT;
 
-    START TRANSACTION;
+--     START TRANSACTION;
 
-    -- 1) Verificar que no exista ya un producto con el mismo código
-    SELECT COUNT(*) 
-      INTO v_count
-      FROM productos
-     WHERE codigo_producto = p_codigo_producto
-     FOR UPDATE;
-    IF v_count > 0 THEN
-        SIGNAL SQLSTATE '45000'
-          SET MESSAGE_TEXT = 'El código de producto ya está en uso';
-    END IF;
+--     -- 1) Verificar que no exista ya un producto con el mismo código
+--     SELECT COUNT(*) 
+--       INTO v_count
+--       FROM productos
+--      WHERE codigo_producto = p_codigo_producto
+--      FOR UPDATE;
+--     IF v_count > 0 THEN
+--         SIGNAL SQLSTATE '45000'
+--           SET MESSAGE_TEXT = 'El código de producto ya está en uso';
+--     END IF;
 
-    -- 2) Verificar que el proveedor exista
-    SELECT COUNT(*) 
-      INTO v_count
-      FROM proveedores
-     WHERE id_proveedor = p_id_proveedor;
-    IF v_count = 0 THEN
-        SIGNAL SQLSTATE '45000'
-          SET MESSAGE_TEXT = 'Proveedor no encontrado';
-    END IF;
+--     -- 2) Verificar que el proveedor exista
+--     SELECT COUNT(*) 
+--       INTO v_count
+--       FROM proveedores
+--      WHERE id_proveedor = p_id_proveedor;
+--     IF v_count = 0 THEN
+--         SIGNAL SQLSTATE '45000'
+--           SET MESSAGE_TEXT = 'Proveedor no encontrado';
+--     END IF;
 
-    -- 3) Insertar el producto
-    INSERT INTO productos (
-      codigo_producto,
-      nombre_producto,
-      precio_producto,
-      unidades_disponibles,
-      id_proveedor
-    )
-    VALUES (
-      p_codigo_producto,
-      p_nombre_producto,
-      p_precio_producto,
-      p_unidades,
-      p_id_proveedor
-    );
+--     -- 3) Insertar el producto
+--     INSERT INTO productos (
+--       codigo_producto,
+--       nombre_producto,
+--       precio_producto,
+--       unidades_disponibles,
+--       id_proveedor
+--     )
+--     VALUES (
+--       p_codigo_producto,
+--       p_nombre_producto,
+--       p_precio_producto,
+--       p_unidades,
+--       p_id_proveedor
+--     );
 
-    COMMIT;
-END;
-//
+--     COMMIT;
+-- END;
+-- //
 
-DELIMITER ;
+-- DELIMITER ;
 
 -- CALL sp_insertar_producto( 'ARTE12345', 'Set de pinceles profesionales', 29.95, 15, 2);
