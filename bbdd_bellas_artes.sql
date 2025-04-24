@@ -80,11 +80,13 @@ SELECT * FROM tienda_bellas_artes.productos;
 -- Tarea
 -- Crear tres tablas más, una que se llame proveedores, otra que se llame clientes
 -- y una última que se llame facturas.
+-- 
 -- 1. En la tabla proveedores tendrán que aparecer los siguientes campos:
 -- a. Id del proveedor
 -- b. Nombre del proveedor
 -- Además de crear la tabla proveedores habrá que modificar la tabla productos de
 -- forma que aparezca el id del proveedor
+-- 
 -- 2. En la tabla clientes tendrán que aparecer los siguientes campos:
 -- a. Id del cliente
 -- b. Nombre del cliente
@@ -163,3 +165,22 @@ VALUES ("Marta Azuara"),
 ;
 
 SELECT * FROM tienda_bellas_artes.clientes;
+
+-- ----- Parte 3 -----
+-- Crear una tabla más que se llame facturas.
+--
+-- 1. En la tabla facturas tendrán que aparecer los siguientes campos:
+-- a. Id factura
+-- b. Id cliente
+-- c. Id producto comprado
+-- d. Fecha de generación de la factura
+-- e. Unidades de producto compradas
+-- f. Total de la compra
+-- 
+-- 2. En este punto del proyecto habrá que
+-- a. Verificar que el producto que el cliente quiere comprar esté en stock,
+-- si así fuera proceder a verificar que la cantidad de producto que el
+-- cliente quiere comprar esté disponible y si finalmente se cumplen
+-- todas las verificaciones pasar a introducir el producto en facturas.
+-- b. Insertar un producto en la tabla de productos con un procedimiento
+-- almacenado
