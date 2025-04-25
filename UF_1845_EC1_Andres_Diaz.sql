@@ -362,7 +362,7 @@ DELIMITER ;
 -- CALL sp_facturar_por_nombre( 'Paco Martinez Soria', 'set_rotuladore_TM_18pz', 20); -- No existe el cliente
 -- CALL sp_facturar_por_nombre( 'Andres Vazquez Martinez', 'set_pinceles_TMZ_5pz', 5); -- No existe el articulo
 -- CALL sp_facturar_por_nombre( 'Eduardo Cunchillo Vivar', 'set_rotuladore_TM_18pz', 20); -- No hay suficiente stock
--- CALL sp_facturar_por_nombre( 'Andres Vazquez Martinez', 'caja_de_rotuladores_Copic_Ciao_36_A', 20); -- Insuficiente stock
+-- CALL sp_facturar_por_nombre( 'Andres Vazquez Martinez', 'caja_de_rotuladores_Copic_Ciao_36_A', 20); -- Sin stock or stock = 0
 
 
 -- Vamos a insertar un producto con un procedimiento almacenado tal como se pide
