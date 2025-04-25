@@ -209,7 +209,7 @@ VALUES ("Marta Azuara"),
 CREATE TABLE IF NOT EXISTS facturas(
 id_factura INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
 codigo_factura VARCHAR(10) UNIQUE NOT NULL,
-id_cliente VARCHAR(50) NOT NULL
+id_cliente INT NOT NULL
 )
 ;
 
@@ -267,7 +267,8 @@ ON UPDATE RESTRICT
 -- almacenado
 -- -----  -----
 
--- Lo primero es modificar la tabla de facturas, que es un pelin distinta
+-- Los requerimientos han cambiado
+-- entonces, lo primero es modificar la tabla de facturas, que es un pelin distinta
 ALTER TABLE facturas DROP COLUMN codigo_factura;
 ALTER TABLE facturas ADD COLUMN id_producto_comprado INT NOT NULL,
 ADD COLUMN fecha_factura  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -278,6 +279,138 @@ ADD COLUMN total_factura DECIMAL(8,2) NOT NULL;
 ALTER TABLE articulos_facturas DROP FOREIGN KEY fk_art_fra_productos;
 ALTER TABLE articulos_facturas DROP FOREIGN KEY fk_facturas_art_fra;
 
--- Y ahora la tabla de articulos_facturas
+-- Y ahora eliminamos la tabla de articulos_facturas
 DROP TABLE articulos_facturas;
+
+-- Añadimos las constraints que relacionaran los campos
+ALTER TABLE facturas
+ADD CONSTRAINT fk_facturas_clientes
+FOREIGN KEY (id_cliente)
+REFERENCES clientes(id_cliente)
+ON DELETE RESTRICT
+ON UPDATE RESTRICT
+;
+ALTER TABLE facturas
+ADD CONSTRAINT fk_facturas_productos
+FOREIGN KEY (id_producto_comprado)
+REFERENCES productos(id_producto)
+ON DELETE RESTRICT
+ON UPDATE RESTRICT
+;
+
+-- Vamos a utilizar un SP para realizar la tarea de comprobación, inserción en la BBDD y actualización del stock
+-- Esto ultimo no se pide, pero como empezamos a hablar de stock lo vamos a realizar
+-- Pruebas varias
+-- SELECT id_cliente FROM clientes WHERE nombre_cliente = 'Elena Garcia Garcia';
+-- SELECT id_producto, unidades_disponibles, precio_producto
+-- FROM productos
+-- WHERE nombre_producto = 'caja_de_rotuladores_Copic_Ciao_36_A';
+
+
+DELIMITER //
+CREATE PROCEDURE sp_facturar_por_nombre(
+sp_nombre_cliente VARCHAR(50),
+sp_nombre_producto VARCHAR(50),
+sp_cantidad INT
+)
+BEGIN
+    DECLARE idCliente INT;
+    DECLARE idProducto INT;
+    DECLARE stockDispo INT;
+    DECLARE precioProd DECIMAL(8,2);
+    DECLARE idFactura INT;
+    -- Obtenemos los datos que necesitamos para proceder, todos los de las variables declaradas arriba
+	SELECT id_cliente
+    INTO idCliente 
+    FROM clientes 
+    WHERE nombre_cliente = sp_nombre_cliente;
+    
+	SELECT id_producto, unidades_disponibles, precio_producto 
+    INTO idProducto, stockDispo, precioProd -- En una sola querie ya lo tenemos todo!
+    FROM productos 
+    WHERE nombre_producto = sp_nombre_producto;
+    -- Comprobación, si no existe lanzamos un mensaje de alerta, si no pues continuamos
+    IF idCliente IS NULL THEN
+		SIGNAL SQLSTATE '45000'
+		SET MESSAGE_TEXT = 'Cliente no encontrado';
+	ELSE
+		-- Aquí deberiamos proceder a dar de alta la compra
+        IF idProducto IS NULL THEN -- Si el producto no existe
+			SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'Producto no encontrado';
+		ELSEIF stockDispo = 0 THEN -- ELSEIF viejo amigo, si no hay stock del producto
+			SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'Producto fuera de stock';
+		ELSEIF stockDispo < sp_cantidad THEN -- Si no hay suficiente stock del producto
+			SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'No hay suficientes unidades en stock';
+		ELSE
+			-- Insertamos datos de la factura
+			INSERT INTO facturas ( id_cliente, id_producto_comprado, fecha_factura, unidades_producto, total_factura )
+			VALUES ( idCliente, idProducto, NOW(), sp_cantidad, sp_cantidad * precioProd );
+			-- Actualizamos el stock en la tabla productos
+			UPDATE productos SET unidades_disponibles = unidades_disponibles - sp_cantidad WHERE id_producto = idProducto;
+        END IF;
+    END IF;
+END //
+DELIMITER ;
+
+-- DROP PROCEDURE sp_facturar_por_nombre;
+
+-- CALL sp_facturar_por_nombre( 'Elena Garcia Garcia', 'caja_de_rotuladores_Copic_Ciao_36_A', 5); -- Compra realizada ok
+-- CALL sp_facturar_por_nombre( 'Marta Azuara', 'caja_de_rotuladores_Copic_Ciao_36_A', 25); -- Compra realizada ok
+-- CALL sp_facturar_por_nombre( 'Paco Martinez Soria', 'set_rotuladore_TM_18pz', 20); -- No existe el cliente
+-- CALL sp_facturar_por_nombre( 'Andres Vazquez Martinez', 'set_pinceles_TMZ_5pz', 5); -- No existe el articulo
+-- CALL sp_facturar_por_nombre( 'Eduardo Cunchillo Vivar', 'set_rotuladore_TM_18pz', 20); -- No hay suficiente stock
+-- CALL sp_facturar_por_nombre( 'Andres Vazquez Martinez', 'caja_de_rotuladores_Copic_Ciao_36_A', 20); -- Insuficiente stock
+
+
+-- Vamos a insertar un producto con un procedimiento almacenado tal como se pide
+DELIMITER //
+CREATE PROCEDURE sp_insertar_producto(
+sp_codigo_producto VARCHAR(9),
+sp_nombre_producto VARCHAR(50),
+sp_precio_producto DECIMAL(6,2),
+sp_unidades INT,
+sp_id_proveedor INT
+)
+BEGIN
+    DECLARE contadorProd INT;
+    DECLARE contadorProv INT;
+	-- Obtenemos los datos que necesitamos para proceder, todos los de las variables declaradas arriba
+    -- usaremos un contador para variar un poco
+    -- básicamente que sea mayor de 0 (Ya existe) o igual a 0 (No existe) True or False
+    SELECT COUNT(id_producto) 
+    INTO contadorProd 
+    FROM productos 
+    WHERE codigo_producto = sp_codigo_producto;
+    
+    SELECT COUNT(id_proveedor) 
+    INTO contadorProv 
+    FROM proveedores 
+    WHERE id_proveedor = sp_id_proveedor;
+    
+   -- Verificamos que no exista ya un producto con el mismo código
+    IF contadorProd > 0 THEN
+		SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El código de producto ya está en uso';
+	ELSE
+        -- Verificamos que el proveedor exista
+		IF contadorProv = 0 THEN
+			SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'Proveedor no encontrado';
+        ELSE
+			-- Finalmente insertamos el producto
+			INSERT INTO productos ( codigo_producto, nombre_producto, precio_producto, unidades_disponibles, id_proveedor )
+			VALUES ( sp_codigo_producto, sp_nombre_producto, sp_precio_producto, sp_unidades, sp_id_proveedor );
+        END IF;
+    END IF;
+END //
+DELIMITER ;
+
+-- DROP PROCEDURE sp_facturar_por_nombre;
+
+-- CALL sp_insertar_producto( '009', 'set_de_pinceles_profesionales', 29.95, 15, 2); -- Nuevo producto
+-- CALL sp_insertar_producto( '001', 'caja_de_rotuladores_Copic_Ciao_36_B', 170.00, 20, 6); -- Ya existe el producto
+-- CALL sp_insertar_producto( '010', 'caja_de_rotuladores_Copic_Ciao_36_B', 170.00, 20, 6); -- No existe el proveedor
 
