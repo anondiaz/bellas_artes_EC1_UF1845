@@ -36,7 +36,7 @@ CREATE DATABASE IF NOT EXISTS tienda_bellas_artes;
 USE tienda_bellas_artes;
 
 -- Si fuera necesario borrar la BBDD
--- DROP DATABASE tienda_bellas_artes;
+ -- DROP DATABASE tienda_bellas_artes;
 
 -- Creamos la tabla productos con:
 -- id_product = Integer, No Nulo, Autoincremental, clave primaria
